@@ -1,0 +1,78 @@
+# Publish a release: the public half (design/repo-split.md in the source repo).
+#
+# The source repo's release workflow cannot push to this repo's registry - the
+# two repos have different owners - so it hands over a DRAFT release here, with
+# the public tree, the images and the WARs and jars attached, and starts this
+# workflow. This workflow then:
+#
+#   1. replaces this repository's tree with the release's (files a release drops
+#      are deleted, so the tree is exactly the release);
+#   2. pushes the images to GHCR under this repository's owner, and pins
+#      docker-compose.yml to the digests the registry returned;
+#   3. commits and tags the result, takes the hand-over bundle off the release,
+#      and publishes it - leaving the WARs, the jars and SHA256SUMS attached.
+#
+# This file is written by the release, like everything here; edit its source in
+# the source repo (release/workflows/publish.yml).
+
+name: publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The draft release to publish (v<VERSION>)
+        required: true
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 0 }
+
+      - name: Fetch the hand-over bundle from the draft release
+        run: |
+          [[ $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "::error::'$TAG' is not v<semver>"; exit 1; }
+          v=${TAG#v}
+          [ "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true ] || { echo "::error::$TAG is not a draft release"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/bundle"
+          gh release download "$TAG" --dir "$RUNNER_TEMP/bundle" \
+            --pattern "pfvc-public-$v.tar.gz" --pattern "pfvc-images-$v.tar"
+
+      - name: Replace the tree with the release's
+        run: |
+          v=${TAG#v}
+          git rm -rq --ignore-unmatch .
+          tar -xzf "$RUNNER_TEMP/bundle/pfvc-public-$v.tar.gz"
+          [ "$(tr -d '[:space:]' < VERSION)" = "$v" ] || { echo "::error::the bundle's VERSION is not $v"; exit 1; }
+
+      - name: Push the images and pin docker-compose.yml to them
+        run: |
+          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          REGISTRY="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}" ./scripts/publish-images.sh "$RUNNER_TEMP/bundle/pfvc-images-${TAG#v}.tar"
+
+      - name: Commit, tag and publish
+        run: |
+          v=${TAG#v}
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "Release $v"
+          git tag "$TAG"
+          git push origin main "$TAG"
+          gh release delete-asset "$TAG" "pfvc-public-$v.tar.gz" --yes
+          gh release delete-asset "$TAG" "pfvc-images-$v.tar" --yes
+          pre=(); case "$TAG" in *-*) pre=(--prerelease) ;; esac
+          gh release edit "$TAG" --draft=false "${pre[@]}" --target "$(git rev-parse HEAD)"
