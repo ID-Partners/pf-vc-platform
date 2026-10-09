@@ -1,0 +1,17 @@
+# Written by the release (release/gitignore in the source repo). What a running
+# stack makes on this machine, and never belongs in this repository.
+.compose
+assets
+services/pingfederate/deploy/*.war
+services/pingfederate/deploy/*.jar
+services/pingfederate/runtime/*.jar
+pingfederate/terraform/.terraform
+pingfederate/terraform/*.lic
+*.tfstate*
+*.tfvars
+*.tfvars.json
+*.p12
+*.p8
+.env
+.env.*
+.DS_Store

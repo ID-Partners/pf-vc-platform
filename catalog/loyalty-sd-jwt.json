@@ -1,0 +1,23 @@
+{
+  "id": "loyalty-sd-jwt",
+  "format": "dc+sd-jwt",
+  "display": "Loyalty Card",
+  "scope": "loyalty",
+  "vct": "https://credentials.idpartners.example/loyalty/1",
+  "rationale": "Not a standards-defined type. Demonstrates a non-identity credential in the same pipeline; the vct is an example namespace and an adopting organisation replaces it.",
+  "claims": [
+    {
+      "name": "program_name"
+    },
+    {
+      "name": "membership_id"
+    },
+    {
+      "name": "tier"
+    },
+    {
+      "name": "member_since",
+      "encoding": "full-date"
+    }
+  ]
+}

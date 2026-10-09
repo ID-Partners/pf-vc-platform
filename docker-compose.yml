@@ -1,0 +1,156 @@
+# The whole platform on one machine, release 1.0.0-beta.1: PingFederate with the
+# credential rails baked in, its gateway, the SCIM identity store, the holder
+# portal and the quickstart's web wallet - behind a TLS edge, on *.localhost.
+#
+#   ./scripts/stack-up.sh          # first run: keys, licence, images, start, configure, check
+#   ./scripts/stack-up.sh --check  # just the checks, against a stack already up
+#   docker compose down            # stop (keeps PingFederate's config and SCIM's data)
+#   docker compose down -v         # and forget them
+#
+# Written by the release - do not edit. Every image is pinned by digest except
+# PingFederate's, which stack-up.sh builds here from Ping's public image and this
+# release's WARs and jars (QUICKSTART.md).
+
+name: idp-pf-vcs
+
+# Node trusts the stack's CA for every outbound call (its public URLs are the
+# edge's), and so needs no trust-on-first-use pin for a local PingFederate.
+x-node-trust: &node-trust
+  NODE_EXTRA_CA_CERTS: /certs/ca.crt
+  PIN_PF_TLS: "false"
+
+services:
+  edge:
+    image: caddy:2-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b
+    # Both loopbacks: macOS resolves *.localhost to ::1 first, and Node tries it first.
+    ports:
+      - "127.0.0.1:${STACK_PORT:-9443}:${STACK_PORT:-9443}"
+      - "[::1]:${STACK_PORT:-9443}:${STACK_PORT:-9443}"
+    environment:
+      STACK_PORT: ${STACK_PORT:-9443}
+    volumes:
+      - ./compose/edge.Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./.compose/certs:/certs:ro
+    networks:
+      default:
+        aliases: [pf.localhost, wallet.localhost, portal.localhost]
+
+  pf-gateway:
+    image: ghcr.io/id-partners/pfvc-pf-gateway:1.0.0-beta.1@sha256:97bc28db7dd77fde442fcf4bf23931adde584063022340cc7136c3332ab02737
+    # G-110: the gateway verifies PingFederate's runtime certificate against the
+    # internal CA the quickstart minted for the name it dials (pingfederate).
+    env_file:
+      - .compose/pf-gateway.env
+    environment:
+      PF_UPSTREAM: pingfederate:9031
+    depends_on:
+      pingfederate:
+        condition: service_healthy
+
+  pingfederate:
+    # Built on the machine that runs it, from Ping's public image and the release's
+    # WARs and jars, in source mode and release mode alike: nothing of Ping's is
+    # ever pushed anywhere, so this name is never pulled.
+    image: pfvc-pingfederate:${PFVC_TAG:-1.0.0-beta.1}
+    build: services/pingfederate
+    env_file:
+      - .compose/pingfederate.env
+    environment:
+      PING_IDENTITY_ACCEPT_EULA: "YES"
+      # A standalone PingFederate with no bulk config is left with its licence
+      # agreement unaccepted and no administrator unless this is set: the image's
+      # post-start hook (83-configure-admin) then does both, with PING_IDENTITY_PASSWORD.
+      CREATE_INITIAL_ADMIN_USER: "true"
+    ports:
+      - "127.0.0.1:${PF_ADMIN_PORT:-9899}:9999"
+      - "[::1]:${PF_ADMIN_PORT:-9899}:9999"
+    volumes:
+      - pf-data:/opt/out
+      - ./pingfederate/terraform/pingfederate.lic:/opt/in/instance/server/default/conf/pingfederate.lic:ro
+    healthcheck:
+      # /tmp/ready is the image's own "post-start hooks finished" marker: the runtime
+      # answers minutes before the admin API has an administrator to answer to.
+      test: ["CMD-SHELL", "test -f /tmp/ready && curl -skf https://localhost:9031/pf/heartbeat.ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 60s
+
+  scim-db:
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    env_file:
+      - .compose/scim-db.env
+    volumes:
+      - scim-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scim -d scim"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  scim:
+    image: ghcr.io/id-partners/pfvc-scim:1.0.0-beta.1@sha256:6eb1c4018cbb280046c2cdcdd936b28827c0eb6785681c00f76fa39f35a981cf
+    env_file:
+      - .compose/scim.env
+    environment:
+      PF_ISSUER: https://pf.localhost:${STACK_PORT:-9443}
+      PF_JWKS_URL: https://pf.localhost:${STACK_PORT:-9443}/pf/JWKS
+      PF_ALLOWED_CLIENTS: issuer-svc,verifier-svc,portal-svc,vci-svc,portal
+      # G-92: the portal's tokens act for the signed-in holder and reach only their
+      # records; portal-svc writes because stack-seed.mjs puts the quickstart holder in with it.
+      SCIM_USER_CLIENTS: portal
+      SCIM_WRITE_CLIENTS: portal-svc
+      # distroless has no CA bundle to add to; SCIM calls nothing but PingFederate.
+      SSL_CERT_FILE: /certs/ca.crt
+    volumes:
+      - ./.compose/certs/ca.crt:/certs/ca.crt:ro
+    depends_on:
+      scim-db:
+        condition: service_healthy
+
+  wallet:
+    image: ghcr.io/id-partners/pfvc-wallet:1.0.0-beta.1@sha256:3711943e764be568a5478109d1c8f2179b283e9a6f4d4eff4edb94f6895ae065
+    environment:
+      <<: *node-trust
+      PORT: "7003"
+      WALLET_BASE_URL: https://wallet.localhost:${STACK_PORT:-9443}
+      PF_BASE_URL: https://pf.localhost:${STACK_PORT:-9443}
+      ISSUER_BASE_URL: https://pf.localhost:${STACK_PORT:-9443}/pf-oid4vci
+      WALLET_PROVIDER_URL: https://pf.localhost:${STACK_PORT:-9443}/pf-wallet-provider/attestation
+      READER_TRUST_ANCHOR_URL: https://pf.localhost:${STACK_PORT:-9443}/pf-oid4vp/.well-known/reader-root.pem
+      # PingFederate requires PAR of the wallet client (generated_wallet_client.tf)
+      # per client, which its metadata does not advertise - so the wallet is told.
+      WALLET_PAR: "true"
+    volumes:
+      - ./.compose/certs/ca.crt:/certs/ca.crt:ro
+    depends_on:
+      pingfederate:
+        condition: service_healthy
+
+  portal:
+    image: ghcr.io/id-partners/pfvc-portal:1.0.0-beta.1@sha256:abe1f46608110f5ab4a9dde6ce29542fb4231325bf23488b6ed9f5c4bec2cad0
+    env_file:
+      - .compose/portal.env
+    environment:
+      <<: *node-trust
+      PORT: "7005"
+      PORTAL_BASE_URL: https://portal.localhost:${STACK_PORT:-9443}
+      PF_BASE_URL: https://pf.localhost:${STACK_PORT:-9443}
+      ISSUER_URL: https://pf.localhost:${STACK_PORT:-9443}/pf-oid4vci
+      SCIM_URL: http://scim:8080
+      SCIM_CLIENT_ID: portal-svc
+    volumes:
+      - ./.compose/certs/ca.crt:/certs/ca.crt:ro
+    depends_on:
+      pingfederate:
+        condition: service_healthy
+      scim:
+        condition: service_started
+
+  tools:
+    image: ghcr.io/id-partners/pfvc-tools:1.0.0-beta.1@sha256:828ba79d42b66162863823b0d424cb6e2827a91cf272c5d6d8cbaf9524cc429b
+    profiles: [tools]
+
+volumes:
+  pf-data:
+  scim-data:

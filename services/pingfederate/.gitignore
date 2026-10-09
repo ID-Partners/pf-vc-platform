@@ -1,0 +1,6 @@
+# Build artifacts staged by scripts/stage-pf.sh — built from pf-ext/, never committed.
+deploy/*.war
+deploy/*.jar
+# The attest_jwt_client_auth module, staged by scripts/stage-pf.sh from pf-ext/ and
+# merged into pf-runtime.war at image build — built, never committed.
+runtime/*.jar

@@ -1,0 +1,15 @@
+{
+  "id": "eu-age-verification-mdoc",
+  "format": "mso_mdoc",
+  "display": "Proof of Age (18+) — EU",
+  "scope": "age",
+  "doctype": "eu.europa.ec.av.1",
+  "namespace": "eu.europa.ec.av.1",
+  "rationale": "The EU Age Verification profile, and the ONLY internationally-defined age doctype Apple grants this account. That is the whole reason it exists: au.com.idpartners.proofofage.1 is ours, so no iPhone wallet can be entitled to provide it, and a credential the platform is never told about cannot appear in the picker however correct the request is. Carrying the same assertion under an international doctype is what makes proof-of-age reachable on iOS at all. The profile is identifiers-ONLY by design — age_over_NN booleans (01-99) and nothing else, no name, no portrait, no date of birth — which is also why this entry declares a single claim where the IDPartners one declares six. PROVENANCE: doctype and namespace are the same string, taken from a credential-profile catalogue rather than the EU rulebook itself, and nothing in this repo can check them. That pair is the first thing to re-verify if a well-formed request returns nothing, because a wrong namespace matches nothing and is indistinguishable from a wallet that does not hold the credential.",
+  "claims": [
+    {
+      "name": "age_over_18",
+      "encoding": "bool"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "id": "pid-sd-jwt",
+  "format": "dc+sd-jwt",
+  "display": "Person Identification Data",
+  "scope": "pid",
+  "vct": "urn:eudi:pid:1",
+  "rationale": "EUDI PID Rulebook v1.6 s3.2 (SD-JWT VC encoding). The CLAIM names differ from the mdoc element names for the same attribute: birthdate (not birth_date), nationalities (not nationality), picture (not portrait). Claiming urn:eudi:pid:1 means meeting this list, not an arbitrary subset - a shorter list asserted a vct the credential did not satisfy (GAP-REGISTER G-19). place_of_birth is MANDATORY in the rulebook but omitted here: no evidence we hold carries a birth place, so it is omitted rather than invented (G-18).",
+  "claims": [
+    {
+      "name": "given_name"
+    },
+    {
+      "name": "family_name"
+    },
+    {
+      "name": "birthdate",
+      "encoding": "full-date"
+    },
+    {
+      "name": "place_of_birth",
+      "encoding": "place-of-birth",
+      "optional": true,
+      "note": "PID Rulebook §2 mandatory birth_place, §3.1.4/§4.1.1 place_of_birth: { ? country, ? region, ? locality }. Optional here - carried when the holder's passport or profile has it (captured at onboarding since 2026-09-30, G-18); David's call is that a PID needs no scanned document, so it is not refused without one."
+    },
+    {
+      "name": "nationalities",
+      "encoding": "alpha2-array",
+      "note": "s3.1.3: [+ CountryCode], ISO 3166-1 alpha-2. A bare string would be a tstr, which is what the mDL wants and the PID does not."
+    },
+    {
+      "name": "picture",
+      "encoding": "data-url"
+    },
+    {
+      "name": "email",
+      "optional": true,
+      "note": "Optional s3.2 claim, data identifier email_address."
+    },
+    {
+      "name": "issuing_authority"
+    },
+    {
+      "name": "issuing_country",
+      "encoding": "alpha2"
+    }
+  ]
+}

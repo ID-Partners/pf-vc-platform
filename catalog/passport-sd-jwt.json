@@ -1,0 +1,40 @@
+{
+  "id": "passport-sd-jwt",
+  "format": "dc+sd-jwt",
+  "display": "ePassport",
+  "scope": "passport",
+  "vct": "https://credentials.idpartners.example/passport/1",
+  "rationale": "Derived from an ICAO 9303 eMRTD read. sex is the MRZ single-character code carried as text here, unlike the PID mdoc encoding where s3.1.2 makes it a uint.",
+  "claims": [
+    {
+      "name": "document_number"
+    },
+    {
+      "name": "given_name"
+    },
+    {
+      "name": "family_name"
+    },
+    {
+      "name": "nationality"
+    },
+    {
+      "name": "birthdate",
+      "encoding": "full-date"
+    },
+    {
+      "name": "sex"
+    },
+    {
+      "name": "expiry_date",
+      "encoding": "full-date"
+    },
+    {
+      "name": "issuing_country"
+    },
+    {
+      "name": "portrait",
+      "encoding": "data-url"
+    }
+  ]
+}

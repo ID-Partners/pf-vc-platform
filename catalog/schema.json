@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://idpartners.com.au/schemas/credential-catalog-entry/1",
+  "title": "Credential catalogue entry",
+  "description": "One credential type, as operator configuration. This file is the single source of truth consumed by the TypeScript and Java issuers; neither may define a credential type in code. Validation is fail-closed: an entry naming an unknown encoding, or a claim with no encoding for a format that requires one, is refused at load with the file and field named rather than silently skipped.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "format",
+    "display",
+    "scope",
+    "claims"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "credential_configuration_id, as used in OID4VCI metadata and in the RAR authorization_details."
+    },
+    "format": {
+      "enum": [
+        "dc+sd-jwt",
+        "mso_mdoc"
+      ],
+      "description": "Credential format identifier."
+    },
+    "display": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string",
+      "description": "OAuth scope gating issuance of this type."
+    },
+    "vct": {
+      "type": "string",
+      "description": "SD-JWT VC type. Required for dc+sd-jwt, forbidden for mso_mdoc."
+    },
+    "doctype": {
+      "type": "string",
+      "description": "mdoc docType. Required for mso_mdoc, forbidden for dc+sd-jwt."
+    },
+    "namespace": {
+      "type": "string",
+      "description": "mdoc namespace. Required for mso_mdoc, forbidden for dc+sd-jwt."
+    },
+    "complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "Issue this credential only when every claim not marked optional has a value - after encoding, so a value the encoder cannot represent counts as missing. Otherwise issuance is refused, naming what is missing. Set where a standard makes elements mandatory and a credential without them is not one: the mDL (ISO/IEC 18013-5 Table 20, G-111). An entry that leaves it false issues what it has, as before."
+    },
+    "rationale": {
+      "type": "string",
+      "description": "Why this entry's claim list is what it is, with the clause it implements. Carried in configuration rather than a code comment because the reasoning outlives whichever port reads it, and because a claim list that looks arbitrary is the one someone 'tidies'."
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The wire identifier. For mdoc this is the rulebook's element identifier column, which is not always the attribute's name (attribute birth_place is carried as element place_of_birth)."
+          },
+          "encoding": {
+            "enum": [
+              "text",
+              "latin1b",
+              "bool",
+              "uint",
+              "full-date",
+              "alpha2",
+              "alpha2-array",
+              "data-url",
+              "bstr-jpeg",
+              "driving-privileges",
+              "place-of-birth"
+            ],
+            "default": "text",
+            "description": "How the value is encoded on the wire. Closed set, implemented once per port. Absent means text. 'latin1b' is a tstr limited to ISO/IEC 8859-1 characters and at most 150 of them - what ISO/IEC 18013-5 Table 20 asks of the mDL's names, issuing_authority and document_number (13.4.2); a value outside it is refused as missing, never truncated or transliterated. Note that 'alpha2' and 'text' are the same CBOR/JSON type (tstr) and differ in the value space: alpha2 normalises to an ISO 3166-1 alpha-2 code. That is not cosmetic - ISO/IEC DIS 18013-5 12.3.2.2 has the reader VERIFY issuing_country against the DS certificate's countryName, so a three-letter code is a credential that passes crypto and fails on content. 'driving-privileges' is the ISO/IEC DIS 18013-5 7.2.4 DrivingPrivileges structure - an array of {vehicle_category_code, ?issue_date, ?expiry_date, ?codes[{code,?sign,?value}]} with the dates as full-date. 'place-of-birth' is the EUDI PID Rulebook 3.1.4 place_of_birth: a map of ? country (alpha-2), ? region, ? locality, at least one present, in both formats. Each is in the closed set rather than a generic passthrough because ISO fixes exactly one shape for it, and a generic 'structured' escape hatch would let any shape through unchecked."
+          },
+          "source": {
+            "type": "string",
+            "description": "Where the value comes from in the identity store, dotted. Absent means the claim name is the source."
+          },
+          "optional": {
+            "type": "boolean",
+            "default": false,
+            "description": "Omit from issuance when the source has no value, rather than failing."
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "format": {
+            "const": "dc+sd-jwt"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "vct"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "doctype"
+              ]
+            },
+            {
+              "required": [
+                "namespace"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "format": {
+            "const": "mso_mdoc"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "doctype",
+          "namespace"
+        ],
+        "not": {
+          "required": [
+            "vct"
+          ]
+        }
+      }
+    }
+  ]
+}

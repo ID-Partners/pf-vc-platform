@@ -1,0 +1,23 @@
+{
+  "id": "bank-account-sd-jwt",
+  "format": "dc+sd-jwt",
+  "display": "Bank Account Ownership",
+  "scope": "bank_account",
+  "vct": "https://credentials.idpartners.example/bank-account/1",
+  "rationale": "Not a standards-defined type. Example namespace; an adopting organisation replaces it.",
+  "claims": [
+    {
+      "name": "account_holder"
+    },
+    {
+      "name": "iban"
+    },
+    {
+      "name": "bank_name"
+    },
+    {
+      "name": "verified_at",
+      "encoding": "full-date"
+    }
+  ]
+}

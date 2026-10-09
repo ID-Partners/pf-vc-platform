@@ -1,0 +1,15 @@
+# Generated from catalog/*.json — do not hand-edit.
+# A jar has no directory to enumerate, so the Java loader reads this to know
+# which entries were baked. conformance/test-catalog-parity.mjs asserts it
+# matches the directory, so a new entry that forgets to update it fails there
+# rather than being silently invisible to the Java issuer.
+age-over-18-mdoc
+age-over-18-sd-jwt
+bank-account-sd-jwt
+eu-age-verification-mdoc
+loyalty-sd-jwt
+mdl-mdoc
+medicare-sd-jwt
+passport-sd-jwt
+pid-mdoc
+pid-sd-jwt

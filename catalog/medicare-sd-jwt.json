@@ -1,0 +1,29 @@
+{
+  "id": "medicare-sd-jwt",
+  "format": "dc+sd-jwt",
+  "display": "Medicare Card",
+  "scope": "medicare",
+  "vct": "https://credentials.idpartners.example/medicare/1",
+  "rationale": "Australian Medicare card. irn is the Individual Reference Number - the position on the card, not a separate identifier. card_colour is meaningful (green/blue/yellow denote entitlement class).",
+  "claims": [
+    {
+      "name": "medicare_number"
+    },
+    {
+      "name": "irn"
+    },
+    {
+      "name": "given_name"
+    },
+    {
+      "name": "family_name"
+    },
+    {
+      "name": "valid_to",
+      "encoding": "full-date"
+    },
+    {
+      "name": "card_colour"
+    }
+  ]
+}

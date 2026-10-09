@@ -1,0 +1,46 @@
+{
+  "id": "pid-mdoc",
+  "format": "mso_mdoc",
+  "display": "Person Identification Data",
+  "scope": "pid",
+  "doctype": "eu.europa.ec.eudi.pid.1",
+  "namespace": "eu.europa.ec.eudi.pid.1",
+  "rationale": "EUDI PID Rulebook v1.6 s3.1.2. Element identifiers are the rulebook's SECOND column - the one used on the wire - which is not always the attribute's name: the attribute birth_place is carried as the element place_of_birth. NOTE what is deliberately NOT here: age_over_18. The mDL carries it (ISO/IEC 18013-5 s13.4.6) and it is the obvious thing to reach for, but the PID rulebook removed the age attributes in v1.1 following CIR 2024/2977. Adding them back because another credential has them would put a non-rulebook element in a rulebook doctype - exactly what an interop test exists to catch. Proof of age lives in age-over-18-mdoc instead.",
+  "claims": [
+    {
+      "name": "family_name"
+    },
+    {
+      "name": "given_name"
+    },
+    {
+      "name": "birth_date",
+      "encoding": "full-date"
+    },
+    {
+      "name": "place_of_birth",
+      "encoding": "place-of-birth",
+      "optional": true,
+      "note": "PID Rulebook §2 mandatory birth_place, §3.1.4/§4.1.1 place_of_birth: { ? country, ? region, ? locality }. Optional here - carried when the holder's passport or profile has it (captured at onboarding since 2026-09-30, G-18); David's call is that a PID needs no scanned document, so it is not refused without one."
+    },
+    {
+      "name": "nationality",
+      "encoding": "alpha2-array"
+    },
+    {
+      "name": "portrait",
+      "encoding": "bstr-jpeg"
+    },
+    {
+      "name": "issuing_authority"
+    },
+    {
+      "name": "issuing_country",
+      "encoding": "alpha2"
+    },
+    {
+      "name": "expiry_date",
+      "encoding": "full-date"
+    }
+  ]
+}

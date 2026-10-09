@@ -1,0 +1,39 @@
+{
+  "_comment": [
+    "Per-credential-type issuance policy: consent, face verification, enablement.",
+    "NOT in catalog/, deliberately. The catalogue is issuance-side truth about what a",
+    "credential IS — fixed by a rulebook, changing when ISO or the Commission changes it.",
+    "Whether THIS deployment demands consent before minting one is the operator's",
+    "decision. One artefact answering to two authorities is how four divergent catalogue",
+    "copies happened once already.",
+    "",
+    "A consent prompt that does not say what is being consented to is worse than none: it",
+    "collects the click without informing the decision. So the PROMPT IS THE POLICY — a",
+    "type with no written prompt requires no consent, rather than getting generic wording",
+    "that names the credential and nothing it does.",
+    "",
+    "This file is the single source. packages/shared/src/issuance-policy.ts and",
+    "vc-core IssuancePolicies both answer to it, and conformance/test-issuance-policy.mjs",
+    "fails if either drifts.",
+    "",
+    "`disabled` names configuration ids this deployment will not issue at all (403",
+    "issuance_disabled). It is written by PUT /admin/policies/{id} on the Java issuer;",
+    "absent or empty means everything the catalogue offers is enabled.",
+    "",
+    "Off by default: medicare-sd-jwt and bank-account-sd-jwt. Each needs an authorised data",
+    "source and a legal basis before a deployment issues it (a Medicare number is a restricted",
+    "government identifier; a bank account touches CDR and AML/CTF). Checked on BOTH issuance",
+    "routes: an admin offer and a wallet's authorization-code request."
+  ],
+  "consent_prompts": {
+    "bank-account-sd-jwt": "You consent to IDPartners issuing a Bank Account Ownership credential that binds your verified account details to this wallet.",
+    "passport-sd-jwt": "You consent to issuing an ePassport credential from your scanned passport data and to the face-verification check."
+  },
+  "requires_face_verification": [
+    "passport-sd-jwt"
+  ],
+  "disabled": [
+    "bank-account-sd-jwt",
+    "medicare-sd-jwt"
+  ]
+}

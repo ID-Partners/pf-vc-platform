@@ -1,0 +1,32 @@
+{
+  "id": "age-over-18-mdoc",
+  "format": "mso_mdoc",
+  "display": "Proof of Age (18+)",
+  "scope": "age",
+  "doctype": "au.com.idpartners.proofofage.1",
+  "namespace": "au.com.idpartners.proofofage.1",
+  "rationale": "A single-purpose age credential, for holders who have no mDL. The doctype is an IDPartners namespace, not a standards-defined one - an adopting organisation replaces it. age_over_18 is derived from date of birth, never carried alongside it: the point is that the verifier learns the boolean and nothing else.",
+  "claims": [
+    {
+      "name": "age_over_18",
+      "encoding": "bool"
+    },
+    {
+      "name": "given_name"
+    },
+    {
+      "name": "family_name"
+    },
+    {
+      "name": "portrait",
+      "encoding": "bstr-jpeg"
+    },
+    {
+      "name": "expiry_date",
+      "encoding": "full-date"
+    },
+    {
+      "name": "issuing_authority"
+    }
+  ]
+}

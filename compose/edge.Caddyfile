@@ -1,0 +1,41 @@
+# The stack's TLS edge (docker-compose.yml, `edge`): what a hosting platform's
+# edge does in front of a deployment - terminate HTTPS for each public hostname
+# and hand plain HTTP to the service behind it. The gateway (services/pf-gateway)
+# stays exactly what it is anywhere else.
+#
+# The certificate is the stack's own, from its own local CA (scripts/stack-up.sh
+# writes both into .compose/certs). Every container that calls another over its
+# public URL trusts that CA; a browser trusts it only if you add .compose/certs/ca.crt
+# to your keychain - otherwise it warns once per host.
+#
+# STACK_PORT (docker-compose.yml, default 9443) is the port inside the container
+# AND on your machine, so https://pf.localhost:9443 is one URL everywhere. Not 443:
+# Docker Desktop publishes a port below 1024 only through a privileged helper that
+# a default install lacks.
+#
+# The hostnames are *.localhost: browsers and curl resolve them to 127.0.0.1, and
+# inside the compose network each is an alias of this container, so a URL means
+# the same thing on your machine and inside the stack.
+{
+	auto_https off
+}
+
+(stack-tls) {
+	tls /certs/stack.crt /certs/stack.key
+}
+
+https://pf.localhost:{$STACK_PORT} {
+	import stack-tls
+	reverse_proxy pf-gateway:8080
+}
+
+https://wallet.localhost:{$STACK_PORT} {
+	import stack-tls
+	reverse_proxy wallet:7003
+}
+
+https://portal.localhost:{$STACK_PORT} {
+	import stack-tls
+	reverse_proxy portal:7005
+}
+

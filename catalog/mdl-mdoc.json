@@ -1,0 +1,71 @@
+{
+  "id": "mdl-mdoc",
+  "format": "mso_mdoc",
+  "display": "Mobile Driving Licence",
+  "scope": "mdl",
+  "doctype": "org.iso.18013.5.1.mDL",
+  "namespace": "org.iso.18013.5.1",
+  "complete": true,
+  "rationale": "ISO/IEC DIS 18013-5 Table 20 (s7.2.1) marks eleven elements M: family_name, given_name, birth_date, issue_date, expiry_date, issuing_country, issuing_authority, document_number, portrait, driving_privileges, un_distinguishing_sign. This entry carries all eleven. It previously carried four of them, which mattered more than a shortfall usually does because this file now drives both issuers rather than one port's literal - so every conformance check passed while PF and TypeScript faithfully issued a licence missing seven mandatory elements. driving_privileges is the one that makes it not a licence at all in any sense a reader cares about, and un_distinguishing_sign is the element with no analogue elsewhere in this catalogue, so it is the one least likely to be noticed missing. age_over_18 is NOT mandatory: it is a native mDL age attestation (s13.4.6), carried so the licence itself proves age by selective disclosure - the holder shows one boolean and withholds their date of birth.",
+  "claims": [
+    {
+      "name": "family_name",
+      "encoding": "latin1b",
+      "note": "Table 20 / 13.4.2: latin1b characters, at most 150. A value outside that is refused as missing (G-120)."
+    },
+    {
+      "name": "given_name",
+      "encoding": "latin1b",
+      "note": "Table 20 / 13.4.2: latin1b characters, at most 150. A value outside that is refused as missing (G-120)."
+    },
+    {
+      "name": "birth_date",
+      "encoding": "full-date",
+      "source": "birthdate",
+      "note": "Table 20: full-date. The holder profile spells it birthdate (the SD-JWT name), so this reads that field and writes the ISO element name."
+    },
+    {
+      "name": "issue_date",
+      "encoding": "full-date"
+    },
+    {
+      "name": "expiry_date",
+      "encoding": "full-date"
+    },
+    {
+      "name": "issuing_country",
+      "encoding": "alpha2",
+      "note": "Table 20: alpha-2 per ISO 3166-1. s12.3.2.2 has the reader verify it against the DS certificate's countryName."
+    },
+    {
+      "name": "issuing_authority",
+      "encoding": "latin1b",
+      "note": "Table 20 / 13.4.2: latin1b characters, at most 150. A value outside that is refused as missing (G-120)."
+    },
+    {
+      "name": "document_number",
+      "encoding": "latin1b",
+      "note": "Table 20 / 13.4.2: latin1b characters, at most 150. A value outside that is refused as missing (G-120)."
+    },
+    {
+      "name": "portrait",
+      "encoding": "bstr-jpeg",
+      "note": "Table 20: bstr. See s13.4.3."
+    },
+    {
+      "name": "driving_privileges",
+      "encoding": "driving-privileges",
+      "note": "s7.2.4. Array of {vehicle_category_code, ?issue_date, ?expiry_date, ?codes}, dates as full-date INSIDE the map. NOTE 2 allows an empty array."
+    },
+    {
+      "name": "un_distinguishing_sign",
+      "note": "Table 20: distinguishing sign per ISO/IEC 18013-1 Annex F - AUS for Australia, not the alpha-2 code. Left as text because it is neither alpha-2 nor alpha-3 in general."
+    },
+    {
+      "name": "age_over_18",
+      "encoding": "bool",
+      "optional": true,
+      "note": "Optional, not mandatory: s13.4.6 age attestation."
+    }
+  ]
+}
